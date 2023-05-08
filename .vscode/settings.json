@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "fuse.h": "c",
+        "time.h": "c",
+        "malloc.h": "c"
+    }
+}
