@@ -11,3 +11,4 @@ init_disk.o: init_disk.c
 .PHONY : all
 clean :
 	rm -f WFS init_disk WFS.o init_disk.o
+	fusermount -u tt

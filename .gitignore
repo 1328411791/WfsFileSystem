@@ -6,6 +6,8 @@
 *.ko
 *.obj
 *.elf
+WFS
+init_disk
 
 # Linker output
 *.ilk
