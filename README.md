@@ -10,8 +10,11 @@ WFS目前已经实现了最简单最基础的功能，但仍有许多不足之�
 4. 按照目前WFS目前的设计，文件的访问是一种顺序访问的方式，请改进WFS的数据访问方式为随机访问。
 
 # install info
+1. install libfuse
+2. cp diskimg to /tmp dir.then make this code.next use WFS to mount dir (like tt)  
 
 # some script
 
 `./WFS <dir>` set mount disk into dir
+
 `fusermount -u <dir>` unmount disk
