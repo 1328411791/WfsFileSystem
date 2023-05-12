@@ -18,3 +18,8 @@ WFS目前已经实现了最简单最基础的功能，但仍有许多不足之�
 `./WFS <dir>` set mount disk into dir
 
 `fusermount -u <dir>` unmount disk
+
+# 做了
+1. ubuf 转换
+2. chmod 指令映射
+

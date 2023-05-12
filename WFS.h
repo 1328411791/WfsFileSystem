@@ -24,12 +24,12 @@ struct file_directory
     char fext[MAX_EXTENSION + 1]; // 扩展名 (plus space for nul)
     time_t atime;                 /* 上次访问时间 */
     time_t mtime;                 /*上次修改时间 */
-                                  //    time_t ctime; 	/* 上次文件状态改变时间 */
-    int uid;                      //
-    int mode;                     //
-    size_t fsize;                 // 文件大小（file size）
-    long nStartBlock;             // 目录开始块位置（where the first block is on disk）
-    int flag;                     // indicate type of file. 0:for unused; 1:for file; 2:for directory
+    // time_t ctime;                 /* 上次文件状态改变时间 */
+    int uid;          //
+    int mode;         //
+    size_t fsize;     // 文件大小（file size）
+    long nStartBlock; // 目录开始块位置（where the first block is on disk）
+    int flag;         // indicate type of file. 0:for unused; 1:for file; 2:for directory
 };
 
 // 文件内容存放用到的数据结构，大小为 512 bytes，占用1块磁盘块
