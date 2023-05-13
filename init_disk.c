@@ -14,7 +14,7 @@
     首先文件系统有1个超级块、1个根目录信息块、1280个bitmap块，所以初始情况下，diskimg应该
     有1282块是被分配了的。
     1. 超级块初始化：
-        ① 通过计算可以得到fs_size = 5MB/512Bytes = 10240 块 
+        ① 通过计算可以得到fs_size = 5MB/512Bytes = 10240 块
         ② 然后 根目录信息块位置 应该是1281(前面 0~1280 共 1281 块）的块空间都被超级块和bitmap占用了)
                 但是我们设置的时候first_blk设置为偏移量：1281，因为从0移动 1281 bit
                 后的位置是1281，之后所有文件的块位置都用偏移量来表示而不是直接给出块的位置
@@ -38,64 +38,68 @@
 
 int main()
 {
-    FILE *fp=NULL;
-    fp = fopen("diskimg1", "r+");//打开文件
-	if (fp == NULL) {
-		printf("打开文件失败，文件不存在\n");return 0;
+    FILE *fp = NULL;
+    fp = fopen("diskimg1", "r+"); // 打开文件
+    if (fp == NULL)
+    {
+        printf("打开文件失败，文件不存在\n");
+        return 0;
     }
 
-    //1. 初始化super_block     大小：1块
-    struct super_block *super_blk = malloc(sizeof(struct super_block));//动态内存分配，申请super_blk
+    // 1. 初始化super_block     大小：1块
+    struct super_block *super_blk = malloc(sizeof(struct super_block)); // 动态内存分配，申请super_blk
 
-    super_blk->fs_size=10240;
-    super_blk->first_blk=1281;//根目录的data_block在1281编号的块中（从0开始编号）
-    super_blk->bitmap=BITMAP_BLOCK;
+    super_blk->fs_size = 10240;
+    super_blk->first_blk = 1281; // 根目录的data_block在1281编号的块中（从0开始编号）
+    super_blk->bitmap = BITMAP_BLOCK;
 
     fwrite(super_blk, sizeof(struct super_block), 1, fp);
     printf("initial super_block success!\n");
 
-    //2. 初始化bitmap_block    大小:1280块= 5242880 bit
-    if (fseek(fp, FS_BLOCK_SIZE * 1, SEEK_SET) != 0)//首先要将指针移动到文件的第二块的起始位置512
+    // 2. 初始化bitmap_block    大小:1280块= 5242880 bit
+    if (fseek(fp, FS_BLOCK_SIZE * 1, SEEK_SET) != 0) // 首先要将指针移动到文件的第二块的起始位置512
         fprintf(stderr, "bitmap fseek failed!\n");
 
-    int a[40];//刚好大小为1280bit，可以用来初始化bitmap_block的前1280bit
-    memset(a,-1,sizeof(a));
-    fwrite(a,sizeof(a),1,fp);
+    int a[40]; // 刚好大小为1280bit，可以用来初始化bitmap_block的前1280bit
+    memset(a, -1, sizeof(a));
+    fwrite(a, sizeof(a), 1, fp);
 
-        //然后我们还有2bit需要置1
-    int b=0;
+    // 然后我们还有2bit需要置1
+    int b = 0;
     int mask = 1;
-	mask <<= 30;    //1281
-	b |= mask;
+    mask <<= 30; // 1281
+    b |= mask;
 
-	mask <<= 1;     //1280
-	b |= mask;
+    mask <<= 1; // 1280
+    b |= mask;
     fwrite(&b, sizeof(int), 1, fp);
 
-        //接着是包含这1282bit的块剩余的部分置0
+    // 接着是包含这1282bit的块剩余的部分置0
     int c[87];
-    memset(c,0,sizeof(c));
-    fwrite(c,sizeof(c),1,fp);
+    memset(c, 0, sizeof(c));
+    fwrite(c, sizeof(c), 1, fp);
 
-        //最后要将bitmap剩余的1279块全部置0，用int数组设置，一个int为4byte
-    int rest_of_bitmap=(1279*512)/4;
+    // 最后要将bitmap剩余的1279块全部置0，用int数组设置，一个int为4byte
+    int rest_of_bitmap = (1279 * 512) / 4;
     int d[rest_of_bitmap];
-    memset(d,0,sizeof(d));
-    fwrite(d,sizeof(d),1,fp);
+    memset(d, 0, sizeof(d));
+    fwrite(d, sizeof(d), 1, fp);
 
-     printf("initial bitmap_block success!\n");
+    printf("initial bitmap_block success!\n");
 
-    //3. 初始化data_block   大小：10240-1282 块
+    // 3. 初始化data_block   大小：10240-1282 块
     fseek(fp, FS_BLOCK_SIZE * (BITMAP_BLOCK + 1), SEEK_SET);
     struct data_block *root = malloc(sizeof(struct data_block));
     root->size = 0;
-	root->nNextBlock = -1;
-	root->data[0] = '\0';
-    fwrite(root, sizeof(struct data_block), 1, fp); //写入磁盘，初始化完成
+    root->nNextBlock = -1;
+    root->data[0] = '\0';
+    fwrite(root, sizeof(struct data_block), 1, fp); // 写入磁盘，初始化完成
 
     printf("initial data_block success!\n");
 
     fclose(fp);
 
     printf("super_bitmap_data_blocks init success!\n");
+
+    printf("exit");
 }

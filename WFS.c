@@ -575,10 +575,17 @@ int get_fd_to_attr(const char *path, struct file_directory *attr)
 			strcat(tempfilename, file_dir->fext);
 		}
 		if (strcmp(m, tempfilename) == 0)
-		{					// found speafied file
+		{ // found speafied file
+			// get flie config
 			attr->flag = 1; // for file
 			strcpy(attr->fname, file_dir->fname);
 			strcpy(attr->fext, file_dir->fext);
+
+			attr->atime = file_dir->atime;
+			attr->mtime = file_dir->mtime;
+			attr->mode = file_dir->mode;
+			attr->uid = file_dir->uid;
+
 			attr->fsize = file_dir->fsize;
 			attr->nStartBlock = file_dir->nStartBlock;
 			free(data_blk);
@@ -596,6 +603,7 @@ int get_fd_to_attr(const char *path, struct file_directory *attr)
 
 // 创建path所指的文件或目录的file_directory，并为该文件（目录）申请空闲块，创建成功返回0，创建失败返回-1
 // mkdir和mknod这两种操作都要用到
+// flag 1 文件 flag 2 目录
 int create_file_dir(const char *path, int flag)
 {
 	printf("调用了create_file_dir，创建的类型是：%d，创建的路径是：%s\n\n", flag, path);
@@ -676,6 +684,10 @@ int create_file_dir(const char *path, int flag)
 		strcpy(file_dir->fext, n);
 	file_dir->fsize = 0;
 	file_dir->flag = flag;
+	time_t now_time;
+	file_dir->atime = now_time;
+	file_dir->mtime = now_time;
+	file_dir->mode = S_IFDIR | 0666;
 
 	// 为新建的文件申请一个空闲块
 	if ((res = get_empty_blk(1, tmp)) == 1)
@@ -830,6 +842,7 @@ static int WFS_getattr(const char *path, struct stat *stbuf, struct fuse_file_in
 		printf("WFS_getattr：这个file_directory是一个文件\n\n");
 		stbuf->st_mode = S_IFREG | attr->mode; // 该文件是	一般文件
 		stbuf->st_size = attr->fsize;
+		stbuf->st_atime = attr->atime;
 		stbuf->st_mtime = attr->mtime;
 		stbuf->st_uid = attr->uid;
 		//  stbuf->st_nlink = 1;
