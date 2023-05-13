@@ -3,5 +3,6 @@
         "fuse.h": "c",
         "time.h": "c",
         "malloc.h": "c"
-    }
+    },
+    "C_Cpp.errorSquiggles": "disabled"
 }
