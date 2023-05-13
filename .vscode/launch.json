@@ -15,6 +15,7 @@
                 "-s",
                 "tt"
             ],
+            "preLaunchTask": "build_all",
         }
     ]
 }

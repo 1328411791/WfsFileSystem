@@ -32,25 +32,25 @@
 			"dependsOn": "clean"
 		},
 		{
-			"type": "cmake",
-			"label": "CMake: build",
-			"command": "build",
-			"targets": [
-				""
-			],
-			"group": "build",
-			"problemMatcher": [],
-			"detail": "CMake template build task"
-		},
-		{
-			"type": "shell",
-			"label": "build",
-			"command": "make",
-		},
-		{
-			"type": "shell",
 			"label": "clean",
-			"command": "make clean"
+			"command": "make",
+			"args": [
+				"clean"
+			],
+			"type": "shell"
+		},
+		{
+			"label": "build_WFS",
+			"type": "shell",
+			"command": "make",
+			"args": [],
+		},
+		{
+			"label": "build_all",
+			"dependsOn": [
+				"clean",
+				"build_WFS"
+			]
 		}
 	]
 }

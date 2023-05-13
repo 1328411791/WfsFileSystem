@@ -3,7 +3,6 @@ init_disk: init_disk.o
 	gcc init_disk.o -o init_disk
 WFS: WFS.o
 	gcc WFS.o -o WFS -Wall -D_FILE_OFFSET_BITS=64 -g -pthread -lfuse3 -lrt -ldl
-
 WFS.o: WFS.c
 	gcc -Wall -D_FILE_OFFSET_BITS=64 -g -c -o WFS.o WFS.c
 init_disk.o: init_disk.c
@@ -12,6 +11,13 @@ init_disk.o: init_disk.c
 
 clean :
 	rm -rf WFS init_disk WFS.o init_disk.o
-	fusermount -u tt
-unmount:
-	fusermount -u tt	
+	@if findmnt -n ./tt; \
+    then \
+        echo "./tt is mounted"; \
+		fusermount -u tt; \
+    else \
+        echo "./tt is not mounted"; \
+    fi
+	
+cp_diskimg:
+	cp ./diskimg /tmp/
