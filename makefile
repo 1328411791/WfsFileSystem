@@ -9,6 +9,9 @@ WFS.o: WFS.c
 init_disk.o: init_disk.c
 	gcc -Wall -D_FILE_OFFSET_BITS=64 -g -c -o init_disk.o init_disk.c
 .PHONY : all
+
 clean :
-	rm -f WFS init_disk WFS.o init_disk.o
+	rm -rf WFS init_disk WFS.o init_disk.o
 	fusermount -u tt
+unmount:
+	fusermount -u tt	
