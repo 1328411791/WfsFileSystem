@@ -18,6 +18,13 @@ clean :
     else \
         echo "./tt is not mounted"; \
     fi
-	
+.PHONY : clean
+
 cp_diskimg:
 	cp ./diskimg /tmp/
+.PHONY : cp_diskimg
+
+run:init_disk WFS
+	echo "run"
+	./WFS tt
+.PHONY : run
