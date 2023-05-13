@@ -684,10 +684,13 @@ int create_file_dir(const char *path, int flag)
 		strcpy(file_dir->fext, n);
 	file_dir->fsize = 0;
 	file_dir->flag = flag;
+
 	time_t now_time;
+	time(&now_time);
 	file_dir->atime = now_time;
 	file_dir->mtime = now_time;
-	file_dir->mode = S_IFDIR | 0666;
+	file_dir->mode = S_IFREG | 0777;
+	file_dir->uid = getuid();
 
 	// 为新建的文件申请一个空闲块
 	if ((res = get_empty_blk(1, tmp)) == 1)
@@ -840,12 +843,13 @@ static int WFS_getattr(const char *path, struct stat *stbuf, struct fuse_file_in
 	else if (attr->flag == 1)
 	{
 		printf("WFS_getattr：这个file_directory是一个文件\n\n");
-		stbuf->st_mode = S_IFREG | attr->mode; // 该文件是	一般文件
+		// 该文件是	一般文件
+		stbuf->st_mode = S_IFREG | attr->mode;
 		stbuf->st_size = attr->fsize;
 		stbuf->st_atime = attr->atime;
 		stbuf->st_mtime = attr->mtime;
 		stbuf->st_uid = attr->uid;
-		//  stbuf->st_nlink = 1;
+		// stbuf->st_nlink = 1;
 	}
 	else
 	{
@@ -1078,10 +1082,6 @@ static int WFS_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_
 	return 0;
 }
 
-static int WFS_chmod(const char *path, int flag)
-{
-}
-
 // 所有文件的操作都要放到这里，fuse会帮我们在相应的linux操作中执行这些我们写好的函数
 static struct fuse_operations WFS_oper = {
 	.init = WFS_init,		// 初始化
@@ -1098,7 +1098,6 @@ static struct fuse_operations WFS_oper = {
 	.rmdir = WFS_rmdir,		// 删除目录
 	.access = WFS_access,	// 进入目录
 	.readdir = WFS_readdir, // 读取目录
-	.chmod = WFS_chmod		// 权限修改
 };
 
 int main(int argc, char *argv[])
