@@ -47,6 +47,12 @@
 			"args": [],
 		},
 		{
+			"label": "git commit",
+			"type": "shell",
+			"command": "git",
+			"args": [],
+		},
+		{
 			"label": "build_all",
 			"dependsOn": [
 				"clean",
