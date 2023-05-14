@@ -623,6 +623,7 @@ void init_file_dir(struct file_directory *file_dir, char *m, char *n, int flag)
 int enlarge_blk(long par_dir_blk, struct file_directory *file_dir,
 				struct data_block *data_blk, char *n, char *m, int flag)
 {
+	int res = 0;
 	long blk;
 	// 设置缓存值
 	long *tmp = malloc(sizeof(long));
@@ -649,7 +650,7 @@ int enlarge_blk(long par_dir_blk, struct file_directory *file_dir,
 	file_dir = (struct file_directory *)data_blk->data;
 	init_file_dir(file_dir, m, n, flag);
 
-	tm - = malloc(sizeof(long));
+	tmp = malloc(sizeof(long));
 
 	if ((res = get_empty_blk(1, tmp)) == 1)
 		file_dir->nStartBlock = *tmp;
@@ -1140,12 +1141,12 @@ static int WFS_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_
 	filler(buf, "..", NULL, 0, 0);
 
 	// 按顺序查找,并向buf添加目录内的文件和目录名
-	struct file_directory *file_dir = (struct file_directory *)data_blk->data;
-	int pos = 0;
 	char name[MAX_FILENAME + MAX_EXTENSION + 2]; // 2是因为文件名和扩展名都有nul字符
 	while (1)
 	{
-		pos = 0;
+		// 初始化参数
+		int pos = 0;
+		struct file_directory file_dir = (struct file_directory *)data_blk->data;
 		while (pos < data_blk->size)
 		{
 			strcpy(name, file_dir->fname);
