@@ -2,6 +2,7 @@
 	"version": "2.0.0",
 	"tasks": [
 		{
+			// 不好用
 			"type": "cppbuild",
 			"label": "C/C++: gcc-11 build active file",
 			"command": "gcc",
