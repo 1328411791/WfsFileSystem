@@ -735,16 +735,35 @@ int create_file_dir(const char *path, int flag)
 	offset = 0;
 	pos = data_blk->size;
 
-	// 遍历父目录下的所有文件和目录，如果已存在同名文件或目录，返回-1
-	// 一个文件一定是连续存放的
-	if ((res = exist_check(file_dir, m, n, &offset, &pos, data_blk->size, flag)))
+	// 遍历块
+	while (1)
 	{
-		free(data_blk);
-		free(file_dir);
-		free(m);
-		free(n);
-		printf("错误：create_file_dir:exist_check检测到该文件（目录）已存在，或出错\n\n");
-		return res = -1;
+		// 遍历父目录下的所有文件和目录，如果已存在同名文件或目录，返回-1
+		// 一个文件一定是连续存放的
+		offset = 0;
+		pos = data_blk->size;
+		if ((res = exist_check(file_dir, m, n, &offset, &pos, data_blk->size, flag)))
+		{
+			free(data_blk);
+			free(file_dir);
+			free(m);
+			free(n);
+			printf("错误：create_file_dir:exist_check检测到该文件（目录）已存在，或出错\n\n");
+			return res = -1;
+		}
+		if (data_blk->nNextBlock == -1)
+		{
+			break;
+		}
+		// 更新写入块位置
+		par_dir_blk = data_blk->nNextBlock;
+		if (read_cpy_data_block(data_blk->nNextBlock, data_blk) == -1)
+		{
+			free(data_blk);
+			free(file_dir);
+			printf(RED "错误：create_file_dir:从目录块中读取目录信息到data_blk时出错\n\n");
+			return -ENOENT;
+		}
 	}
 
 	printf("create_file_dir:没有重名的文件或目录，开始创建文件\n\n");
