@@ -16,6 +16,8 @@
 
 #include "WFS.h"
 
+#define RED "\033[1;31m"
+
 // 该函数为读取并复制file_directory结构的内容，因为文件系统所有对文件的操作都需要先从文件所在目录
 // 读取file_directory信息,然后才能找到文件在磁盘的位置，后者的数据复制给前者
 void read_cpy_file_dir(struct file_directory *a, struct file_directory *b)
@@ -601,6 +603,82 @@ int get_fd_to_attr(const char *path, struct file_directory *attr)
 	return -1;
 }
 
+void init_file_dir(struct file_directory *file_dir, char *m, char *n, int flag)
+{
+	// 给新建的file_directory赋值
+	strcpy(file_dir->fname, m);
+	if (flag == 1 && *n != '\0')
+		strcpy(file_dir->fext, n);
+	file_dir->fsize = 0;
+	file_dir->flag = flag;
+
+	time_t now_time;
+	time(&now_time);
+	file_dir->atime = now_time;
+	file_dir->mtime = now_time;
+	file_dir->mode = S_IFREG | 0777;
+	file_dir->uid = getuid();
+}
+
+int enlarge_blk(long par_dir_blk, struct file_directory *file_dir,
+				struct data_block *data_blk, char *n, char *m, int flag)
+{
+	long blk;
+	// 设置缓存值
+	long *tmp = malloc(sizeof(long));
+
+	// 分配块
+	if (get_empty_blk(1, tmp) == 1)
+	{
+		blk = *tmp;
+	}
+	else
+	{
+		printf(RED "没有分配空闲块");
+		return -ENOENT;
+	}
+
+	free(tmp);
+
+	data_blk->nNextBlock = blk;
+
+	write_data_block(par_dir_blk, data_blk);
+
+	data_blk->nNextBlock = -1;
+	data_blk->size = sizeof(struct file_directory);
+	file_dir = (struct file_directory *)data_blk->data;
+	init_file_dir(file_dir, m, n, flag);
+
+	tm - = malloc(sizeof(long));
+
+	if ((res = get_empty_blk(1, tmp)) == 1)
+		file_dir->nStartBlock = *tmp;
+	else
+	{
+		printf("错误：create_file_dir：为新建文件申请数据块时失败，函数结束返回\n\n");
+		free(data_blk);
+		free(file_dir);
+		free(m);
+		free(n);
+		return -errno;
+	}
+	printf("tmp=%ld\n\n", *tmp);
+	free(tmp);
+	// 将要创建的文件或目录信息写入上层目录中
+	write_data_block(blk, data_blk);
+
+	data_blk->size = 0;
+	data_blk->nNextBlock = -1;
+	strcpy(data_blk->data, "\0");
+
+	// 文件起始块内容为空
+	write_data_block(file_dir->nStartBlock, data_blk);
+
+	printf("m=%s,n=%s\n\n", m, n);
+
+	return 0;
+}
+
 // 创建path所指的文件或目录的file_directory，并为该文件（目录）申请空闲块，创建成功返回0，创建失败返回-1
 // mkdir和mknod这两种操作都要用到
 // flag 1 文件 flag 2 目录
@@ -662,7 +740,18 @@ int create_file_dir(const char *path, int flag)
 	{
 		if (data_blk->size > MAX_DATA_IN_BLOCK)
 		{
-			// 当前块放不下目录内容,you should add some code here
+			// TODO:当前块放不下目录内容,you should add some code here
+			// 当前块放不下目录内容
+			if (res = enlarge_blk(par_dir_blk, &file_dir, data_blk, n, m, flag))
+			{
+				free(data_blk);
+				printf(RED "创建错误");
+				return res;
+			}
+			free(n);
+			free(m);
+			free(data_blk);
+			return 0;
 		}
 		else
 		{ // 块容量足够，直接加size
@@ -678,19 +767,9 @@ int create_file_dir(const char *path, int flag)
 		while (offset < pos)
 			file_dir++;
 	}
-	// 给新建的file_directory赋值
-	strcpy(file_dir->fname, m);
-	if (flag == 1 && *n != '\0')
-		strcpy(file_dir->fext, n);
-	file_dir->fsize = 0;
-	file_dir->flag = flag;
 
-	time_t now_time;
-	time(&now_time);
-	file_dir->atime = now_time;
-	file_dir->mtime = now_time;
-	file_dir->mode = S_IFREG | 0777;
-	file_dir->uid = getuid();
+	// init dir
+	init_file_dir(file_dir, m, n, flag);
 
 	// 为新建的文件申请一个空闲块
 	if ((res = get_empty_blk(1, tmp)) == 1)
@@ -1064,18 +1143,33 @@ static int WFS_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_
 	struct file_directory *file_dir = (struct file_directory *)data_blk->data;
 	int pos = 0;
 	char name[MAX_FILENAME + MAX_EXTENSION + 2]; // 2是因为文件名和扩展名都有nul字符
-	while (pos < data_blk->size)
+	while (1)
 	{
-		strcpy(name, file_dir->fname);
-		if (strlen(file_dir->fext) != 0)
+		pos = 0;
+		while (pos < data_blk->size)
 		{
-			strcat(name, ".");
-			strcat(name, file_dir->fext);
+			strcpy(name, file_dir->fname);
+			if (strlen(file_dir->fext) != 0)
+			{
+				strcat(name, ".");
+				strcat(name, file_dir->fext);
+			}
+			if (file_dir->flag != 0 && name[strlen(name) - 1] != '~' && filler(buf, name, NULL, 0, 0)) // 将文件名添加到buf里面
+				break;
+			file_dir++;
+			pos += sizeof(struct file_directory);
 		}
-		if (file_dir->flag != 0 && name[strlen(name) - 1] != '~' && filler(buf, name, NULL, 0, 0)) // 将文件名添加到buf里面
+		if (data_blk->nNextBlock == -1)
+		{
 			break;
-		file_dir++;
-		pos += sizeof(struct file_directory);
+		}
+		if (read_cpy_data_block(data_blk->nNextBlock, data_blk) == -1)
+		{
+			free(data_blk);
+			free(file_dir);
+			printf(RED "错误：create_file_dir:从目录块中读取目录信息到data_blk时出错\n\n");
+			return -ENOENT;
+		}
 	}
 	free(attr);
 	free(data_blk);
