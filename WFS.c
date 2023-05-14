@@ -364,36 +364,52 @@ int setattr(const char *path, struct file_directory *attr, int flag)
 		free(data_blk);
 		return res;
 	}
-	// start_blk=data_blk->nNextBlock;
+	// TODO: 增加多文件筐
 	struct file_directory *file_dir = (struct file_directory *)data_blk->data;
 	int offset = 0;
-	while (offset < data_blk->size)
+	while (1)
 	{
-		// 循环遍历块内容
-		// 找到该文件
-		if (file_dir->flag != 0 && strcmp(m, file_dir->fname) == 0 && (*n == '\0' || strcmp(n, file_dir->fext) == 0))
+		file_dir = (struct file_directory *)data_blk->data;
+		offset = 0;
+		while (offset < data_blk->size)
 		{
-			printf("setattr：找到相应路径的file_directory，可以进行回写了\n\n");
-			// 设置为attr指定的属性
-			read_cpy_file_dir(file_dir, attr);
-			res = 0;
-			free(m);
-			free(n);
-			// 将修改后的目录信息写回磁盘文件
-			if (write_data_block(start_blk, data_blk) == -1)
+			// 循环遍历块内容
+			// 找到该文件
+			if (file_dir->flag != 0 && strcmp(m, file_dir->fname) == 0 && (*n == '\0' || strcmp(n, file_dir->fext) == 0))
 			{
-				printf("错误：setattr：while循环内回写数据块失败\n\n");
-				res = -1;
+				printf("setattr：找到相应路径的file_directory，可以进行回写了\n\n");
+				// 设置为attr指定的属性
+				read_cpy_file_dir(file_dir, attr);
+				res = 0;
+				free(m);
+				free(n);
+				// 将修改后的目录信息写回磁盘文件
+				if (write_data_block(start_blk, data_blk) == -1)
+				{
+					printf("错误：setattr：while循环内回写数据块失败\n\n");
+					res = -1;
+				}
+				free(data_blk);
+				return res;
 			}
-			free(data_blk);
-			return res;
+			// 读下一个文件
+			file_dir++;
+			offset += sizeof(struct file_directory);
 		}
-		// 读下一个文件
-		file_dir++;
-		offset += sizeof(struct file_directory);
+		// 如果在这一个块找不到该文件，我们继续寻找该目录的下一个块，不过前提是这个目录文件有下一个块
+		if (data_blk->nNextBlock == -1 || data_blk->nNextBlock == 0)
+		{
+			break;
+		}
+		start_blk = data_blk->nNextBlock;
+		if (read_cpy_data_block(data_blk->nNextBlock, data_blk) == -1)
+		{
+			free(data_blk);
+			free(file_dir);
+			printf(RED "错误：create_file_dir:从目录块中读取目录信息到data_blk时出错\n\n");
+			return -ENOENT;
+		}
 	}
-	// 如果在这一个块找不到该文件，我们继续寻找该目录的下一个块，不过前提是这个目录文件有下一个块
-	// }while(data_blk->nNextBlock!=-1 && data_blk->nNextBlock!=0);
 	printf("setattr：赋值成功，函数结束返回\n\n");
 	// 找遍整个目录都没找到该文件就直接返回-1
 	return -1;
