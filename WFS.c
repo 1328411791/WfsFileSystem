@@ -554,7 +554,7 @@ int get_fd_to_attr(const char *path, struct file_directory *attr)
 	// 先往后移一位，跳过第一个'/'，然后检查一下这个路径是不是有两个'/'，如果有，说明路径是/hehe/a.txt形
 	m++;
 
-	// struct data_block *data_blk=malloc(sizeof(struct data_block));
+	// struct data_block *data_blk = malloc(sizeof(struct data_block));
 
 	// 读取根目录文件的信息，失败的话返回-1
 	if (read_cpy_data_block(start_blk, data_blk) == -1)
@@ -567,34 +567,51 @@ int get_fd_to_attr(const char *path, struct file_directory *attr)
 	// 强制类型转换，读取根目录中文件的信息，根目录块中装的都是struct file_directory
 	struct file_directory *file_dir = (struct file_directory *)data_blk->data;
 	int i = 0;
-	while (i < 512 / sizeof(struct file_directory))
+	while (1)
 	{
-		char tempfilename[20];
-		strcpy(tempfilename, file_dir->fname);
-		if (file_dir->fext[0] != 0)
+		i = 0;
+		struct file_directory *file_dir = (struct file_directory *)data_blk->data;
+		while (i < 512 / sizeof(struct file_directory))
 		{
-			strcat(tempfilename, ".");
-			strcat(tempfilename, file_dir->fext);
+			char tempfilename[20];
+			strcpy(tempfilename, file_dir->fname);
+			if (file_dir->fext[0] != 0)
+			{
+				strcat(tempfilename, ".");
+				strcat(tempfilename, file_dir->fext);
+			}
+			if (strcmp(m, tempfilename) == 0)
+			{ // found speafied file
+				// get flie config
+				attr->flag = 1; // for file
+				strcpy(attr->fname, file_dir->fname);
+				strcpy(attr->fext, file_dir->fext);
+
+				attr->atime = file_dir->atime;
+				attr->mtime = file_dir->mtime;
+				attr->mode = file_dir->mode;
+				attr->uid = file_dir->uid;
+
+				attr->fsize = file_dir->fsize;
+				attr->nStartBlock = file_dir->nStartBlock;
+				free(data_blk);
+				return (0);
+			}
+			file_dir++;
+			i++;
 		}
-		if (strcmp(m, tempfilename) == 0)
-		{ // found speafied file
-			// get flie config
-			attr->flag = 1; // for file
-			strcpy(attr->fname, file_dir->fname);
-			strcpy(attr->fext, file_dir->fext);
-
-			attr->atime = file_dir->atime;
-			attr->mtime = file_dir->mtime;
-			attr->mode = file_dir->mode;
-			attr->uid = file_dir->uid;
-
-			attr->fsize = file_dir->fsize;
-			attr->nStartBlock = file_dir->nStartBlock;
+		// 如果没有下一个，终止查询
+		if (data_blk->nNextBlock == -1)
+		{
+			break;
+		}
+		if (read_cpy_data_block(data_blk->nNextBlock, data_blk) == -1)
+		{
 			free(data_blk);
-			return (0);
+			free(file_dir);
+			printf(RED "错误：create_file_dir:从目录块中读取目录信息到data_blk时出错\n\n");
+			return -1;
 		}
-		file_dir++;
-		i++;
 	}
 
 	// 循环结束都还没找到，则返回-1
