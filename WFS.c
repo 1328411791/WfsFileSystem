@@ -1141,12 +1141,13 @@ static int WFS_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_
 	filler(buf, "..", NULL, 0, 0);
 
 	// 按顺序查找,并向buf添加目录内的文件和目录名
+	struct file_directory *file_dir = (struct file_directory *)data_blk->data;
+	int pos = 0;
 	char name[MAX_FILENAME + MAX_EXTENSION + 2]; // 2是因为文件名和扩展名都有nul字符
 	while (1)
 	{
-		// 初始化参数
-		int pos = 0;
-		struct file_directory file_dir = (struct file_directory *)data_blk->data;
+		pos = 0;
+		file_dir = (struct file_directory *)data_blk->data;
 		while (pos < data_blk->size)
 		{
 			strcpy(name, file_dir->fname);
