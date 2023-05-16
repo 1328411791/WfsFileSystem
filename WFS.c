@@ -1057,15 +1057,59 @@ static int WFS_read(const char *path, char *buf, size_t size, off_t offset, stru
 	else
 		size = 0;
 
-	char *pt = data_blk->data; // 先读出offset所在块的数据
-	pt += offset;			   // 将数据指针移动到offset所指的位置
+	size_t size_return = size;
 
-	strncpy(buf, pt, size);
+	// 查找offset在文件的哪个块
+	if (offset >= MAX_DATA_IN_BLOCK)
+	{
+		while (data_blk->nNextBlock != -1)
+		{
+			if (offset <= MAX_DATA_IN_BLOCK)
+			{
+				break;
+			}
+			offset -= MAX_DATA_IN_BLOCK;
+			if (read_cpy_data_block(data_blk->nNextBlock, data_blk) == -1)
+			{
+				printf(RED "块读取错误\n");
+				return -errno;
+			}
+		}
+	}
+
+	char *pt = data_blk->data;
+
+	// 分块读取
+	do
+	{
+		if (offset + size <= MAX_DATA_IN_BLOCK)
+		{
+			pt = data_blk->data; // 先读出offset所在块的数据
+			pt += offset;		 // 将数据指针移动到offset所指的位置
+			strncpy(buf, pt, size);
+			buf += size;
+			break;
+		}
+		else
+		{
+			pt = data_blk->data; // 先读出offset所在块的数据
+			pt += offset;		 // 将数据指针移动到offset所指的位置
+			strncpy(buf, pt, MAX_DATA_IN_BLOCK - offset);
+			buf += MAX_DATA_IN_BLOCK - offset;
+			size -= MAX_DATA_IN_BLOCK - offset;
+			offset = 0;
+			if (read_cpy_data_block(data_blk->nNextBlock, data_blk) == -1)
+			{
+				printf(RED "块读取错误\n");
+				return -errno;
+			}
+		}
+	} while (size != 0);
 
 	printf("WFS_read：文件读取成功，函数结束返回\n\n");
 	free(attr);
 	free(data_blk);
-	return size;
+	return size_return;
 }
 
 // 修改文件,将buf里大小为size的内容，写入path指定的起始块后的第offset
