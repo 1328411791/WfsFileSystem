@@ -1095,8 +1095,26 @@ static int WFS_write(const char *path, const char *buf, size_t size, off_t offse
 
 	int p_offset = offset; // p_offset用来记录修改前最后一个文件块的位置
 	struct data_block *data_blk = malloc(sizeof(struct data_block));
-
 	read_cpy_data_block(start_blk, data_blk);
+
+	// 如果读取大于一个块的数据
+	if (p_offset >= MAX_DATA_IN_BLOCK)
+	{
+		while (data_blk->nNextBlock == -1)
+		{
+			if (p_offset <= MAX_DATA_IN_BLOCK)
+			{
+				break;
+			}
+			p_offset -= MAX_DATA_IN_BLOCK;
+			if (read_cpy_data_block(data_blk->nNextBlock, data_blk) == -1)
+			{
+				printf(RED "块读取错误\n");
+				return -errno;
+			}
+		}
+	}
+
 	char *pt = data_blk->data;
 	// 找到offset所在块中offset位置
 	pt += offset;
@@ -1104,22 +1122,64 @@ static int WFS_write(const char *path, const char *buf, size_t size, off_t offse
 	int towrite = size;
 	int writen = 0;
 
-	strncpy(pt, buf, towrite); // 写入长度为towrite的内容
-	buf += towrite;			   // 移到字符串待写处
-	data_blk->size += towrite; // 该数据块的size增加已写数据量towrite
-	writen += towrite;		   // buf中已写的数据量
+	do
+	{
+		if (p_offset + size < MAX_DATA_IN_BLOCK)
+		{
+			towrite = size;
+			pt = data_blk->data;
 
-	size = writen;
-	write_data_block(start_blk, data_blk);
+			strncpy(pt, buf, towrite); // 写入长度为towrite的内容
+			buf += towrite;			   // 移到字符串待写处
+			data_blk->size += towrite; // 该数据块的size增加已写数据量towrite
+			writen += towrite;		   // buf中已写的数据量
+			size -= towrite;
+			write_data_block(start_blk, data_blk);
+		}
+		else
+		{
+			towrite = MAX_DATA_IN_BLOCK - p_offset;
+			pt = data_blk->data;
+
+			strncpy(pt, buf, towrite);
+			pt += towrite;
+			buf += towrite;
+			data_blk->size == MAX_DATA_IN_BLOCK;
+			writen += towrite;
+			p_offset = 0;
+			size -= towrite;
+
+			long blk = -1;
+			// 分配新块
+			long *tmp = malloc(sizeof(long));
+			if (get_empty_blk(1, tmp) == 1)
+			{
+				blk = *tmp;
+			}
+			else
+			{
+				printf(RED "没有分配空闲块");
+				return -ENOENT;
+			}
+			free(tmp);
+			data_blk->nNextBlock = blk;
+			write_data_block(start_blk, data_blk);
+			// 初始化新块
+			start_blk = data_blk->nNextBlock;
+			data_blk->size = 0;
+			data_blk->nNextBlock = -1;
+		}
+	} while (size != 0);
+
 	// 修改被写文件file_directory的文件大小信息为:写入起始位置+写入内容大小
-	attr->fsize = p_offset + size;
+	attr->fsize = offset + writen;
 	if (setattr(path, attr, 1) == -1)
 		size = -errno;
 
 	printf("WFS_write：文件写入成功，函数结束返回\n\n");
 	free(attr);
 	free(data_blk); // free(next_blk);
-	return size;
+	return writen;
 }
 /*
 //关闭文件
