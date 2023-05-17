@@ -364,7 +364,7 @@ int setattr(const char *path, struct file_directory *attr, int flag)
 		free(data_blk);
 		return res;
 	}
-	// TODO: 增加多文件筐
+	// 多块读写
 	struct file_directory *file_dir = (struct file_directory *)data_blk->data;
 	int offset = 0;
 	while (1)
@@ -599,7 +599,7 @@ int get_fd_to_attr(const char *path, struct file_directory *attr)
 			if (strcmp(m, tempfilename) == 0)
 			{ // found speafied file
 				// get flie config
-				attr->flag = 1; // for file
+				attr->flag = file_dir->flag; // for file
 				strcpy(attr->fname, file_dir->fname);
 				strcpy(attr->fext, file_dir->fext);
 
@@ -649,7 +649,14 @@ void init_file_dir(struct file_directory *file_dir, char *m, char *n, int flag)
 	time(&now_time);
 	file_dir->atime = now_time;
 	file_dir->mtime = now_time;
-	file_dir->mode = S_IFREG | 0777;
+	if (flag == 1)
+	{
+		file_dir->mode = S_IFREG | 0766;
+	}
+	else if (flag == 2)
+	{
+		file_dir->mode = S_IFDIR | 0766;
+	}
 	file_dir->uid = getuid();
 }
 
@@ -966,11 +973,17 @@ static int WFS_getattr(const char *path, struct stat *stbuf, struct fuse_file_in
 	}
 
 	memset(stbuf, 0, sizeof(struct stat)); // 将stat结构中成员的值全部置0
+
+	// 从path判断这个文件是		一个目录	还是	一般文件
 	if (attr->flag == 2)
-	{ // 从path判断这个文件是		一个目录	还是	一般文件
+	{
 		printf("WFS_getattr：这个file_directory是一个目录\n\n");
 		stbuf->st_mode = S_IFDIR | 0666; // 设置成目录,S_IFDIR和0666（8进制的文件权限掩码），这里进行或运算
 										 // stbuf->st_nlink = 2;//st_nlink是连到该文件的硬连接数目,即一个文件的一个或多个文件名。说白点，所谓链接无非是把文件名和计算机文件系统使用的节点号链接起来。因此我们可以用多个文件名与同一个文件进行链接，这些文件名可以在同一目录或不同目录。
+		stbuf->st_atime = attr->atime;
+		stbuf->st_mtime = attr->mtime;
+		stbuf->st_uid = attr->uid;
+		stbuf->st_size = attr->fsize;
 	}
 	else if (attr->flag == 1)
 	{
@@ -981,6 +994,7 @@ static int WFS_getattr(const char *path, struct stat *stbuf, struct fuse_file_in
 		stbuf->st_atime = attr->atime;
 		stbuf->st_mtime = attr->mtime;
 		stbuf->st_uid = attr->uid;
+
 		// stbuf->st_nlink = 1;
 	}
 	else
@@ -1247,13 +1261,19 @@ static int WFS_rmdir(const char *path)
 // 进入目录
 static int WFS_access(const char *path, int flag)
 {
-	/*int res;
-	struct file_directory* attr=malloc(sizeof(struct file_directory));
-	if(get_fd_to_attr(path,attr)==-1)
+	int res;
+	struct file_directory *attr = malloc(sizeof(struct file_directory));
+	if (get_fd_to_attr(path, attr) == -1)
 	{
-		free(attr);return -ENOENT;
+		free(attr);
+		return -ENOENT;
 	}
-	if(attr->flag==1) {free(attr);return -ENOTDIR;}*/
+	if (attr->flag == 1)
+	{
+		printf(RED "该路径不是目录\n");
+		free(attr);
+		return -ENOTDIR;
+	}
 	return 0;
 }
 
@@ -1325,7 +1345,7 @@ static int WFS_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_
 		{
 			free(data_blk);
 			free(file_dir);
-			printf(RED "错误：create_file_dir:从目录块中读取目录信息到data_blk时出错\n\n");
+			printf(RED "错误：create_file_dir:从目录块中读取目录信息到data_blk时出错\n");
 			return -ENOENT;
 		}
 	}
