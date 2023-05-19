@@ -568,8 +568,33 @@ int get_fd_to_attr(const char *path, struct file_directory *attr)
 	// 我们路径处理的目标是让tmp_path记录diskimg下的目录名（如果path含目录的话），m记录文件名，n记录后缀名
 
 	// 先往后移一位，跳过第一个'/'，然后检查一下这个路径是不是有两个'/'，如果有，说明路径是/hehe/a.txt形
-	m++;
 
+	m++;
+	while (*m != '\0')
+	{
+		if (*m == '/')
+		{
+			break;
+		}
+		m++;
+	}
+	// 如果没有两个'/'，说明路径是/a.txt形
+	if (*m == '\0')
+	{
+		m = tmp_path;
+		m++;
+	}
+	else
+	{
+		// 如果有两个'/'，说明路径是/hehe/a.txt形
+		// 先把第二个'/'改成'\0'，然后把m指针指向第二个'/'后面的字符
+		*m = '\0';
+		get_fd_to_attr(tmp_path, attr);
+		start_blk = attr->nStartBlock;
+		m++;
+	}
+
+	// 切分到下一目录位置
 	// struct data_block *data_blk = malloc(sizeof(struct data_block));
 
 	// 读取根目录文件的信息，失败的话返回-1
