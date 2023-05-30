@@ -30,6 +30,19 @@ void read_cpy_file_dir(struct file_directory *a, struct file_directory *b)
 	a->flag = b->flag;
 }
 
+long str_to_hash(char *str)
+{
+	int i = 1;
+	long ret = 0;
+	while (*str != '\0')
+	{
+		ret += *str * i;
+		i++;
+		str++;
+	}
+	return ret;
+}
+
 // 根据文件的块号，从磁盘（5M大文件）中读取数据
 // 步骤：① 打开文件；② 将FILE指针移动到文件的相应位置；③ 读出数据块
 int read_cpy_data_block(long blk_no, struct data_block *data_blk)
@@ -1255,6 +1268,7 @@ static int WFS_write(const char *path, const char *buf, size_t size, off_t offse
 	} while (size != 0);
 
 	// 修改被写文件file_directory的文件大小信息为:写入起始位置+写入内容大小
+	time(&attr->mtime);
 	attr->fsize = offset + writen;
 	if (setattr(path, attr, 1) == -1)
 		size = -errno;
