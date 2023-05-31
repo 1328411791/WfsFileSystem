@@ -674,6 +674,29 @@ int get_fd_to_attr(const char *path, struct file_directory *attr)
 	return -1;
 }
 
+// 初始化创建目录hashmap
+long init_create_hashmap(struct file_directory *file)
+{
+	long hashcode = str_to_hash(file_name);
+	// TODO: 完成初始化hash表
+	// 创建新块
+	long blk = -1;
+	if (get_empty_blk(1, &blk) == -1)
+	{
+		printf(RED "错误：create_hashmap：为新建文件申请数据块时失败，函数结束返回\n\n");
+		return -errno;
+	}
+	// setting file struct
+	file->nMapBlock = blk;
+	read_cpy_data_block(blk, (struct data_block *)data_block);
+	data_block->size = 0;
+	data_block->nNextBlock = -1;
+
+	// 写入磁盘
+	write_data_block(blk, (struct data_block *)file_directory);
+	free(hashmap);
+}
+
 void init_file_dir(struct file_directory *file_dir, char *m, char *n, int flag)
 {
 	// 给新建的file_directory赋值
@@ -695,6 +718,7 @@ void init_file_dir(struct file_directory *file_dir, char *m, char *n, int flag)
 	{
 		// 该文件为目录
 		file_dir->mode = S_IFDIR | 0766;
+		long hashMapBlock = -1;
 	}
 	file_dir->uid = getuid();
 }
