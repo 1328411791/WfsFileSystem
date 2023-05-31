@@ -40,6 +40,15 @@ struct data_block
     char data[MAX_DATA_IN_BLOCK]; // And all the rest of the space in the block can be used for actual data storage.
 };
 
+struct bitmap
+{
+    char fname[MAX_FILENAME + 1]; // 文件名 (plus space for nul)
+    char fext[MAX_EXTENSION + 1]; // 扩展名 (plus space for nul)
+    long hashcode;
+    long nStartBlock; // 目录开始块位置（where the first block is on disk）
+    int flag;         // indicate type of file. 0:for unused; 1:for file; 2:for directory
+};
+
 // 加载镜像目录
 char *disk_path = "/tmp/diskimg";
 

@@ -693,6 +693,7 @@ void init_file_dir(struct file_directory *file_dir, char *m, char *n, int flag)
 	}
 	else if (flag == 2)
 	{
+		// 该文件为目录
 		file_dir->mode = S_IFDIR | 0766;
 	}
 	file_dir->uid = getuid();
