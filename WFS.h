@@ -9,6 +9,11 @@
 #define MAX_EXTENSION 3
 long TOTAL_BLOCK_NUM;
 
+/*
+author: lhy
+description: wfs基础框架功能
+*/
+
 // 超级块中记录的，大小为 24 bytes（3个long），占用1块磁盘块
 struct super_block
 {

@@ -18,6 +18,11 @@
 
 #define RED "\033[1;31m"
 
+/*
+author: lhy
+description: wfs基础功能实现
+*/
+
 // 该函数为读取并复制file_directory结构的内容，因为文件系统所有对文件的操作都需要先从文件所在目录
 // 读取file_directory信息,然后才能找到文件在磁盘的位置，后者的数据复制给前者
 void read_cpy_file_dir(struct file_directory *a, struct file_directory *b)
@@ -681,6 +686,7 @@ long init_create_hashmap(struct file_directory *file)
 	// TODO: 完成初始化hash表
 	// 创建新块
 	long blk = -1;
+	struct data_block *data_block;
 	if (get_empty_blk(1, &blk) == -1)
 	{
 		printf(RED "错误：create_hashmap：为新建文件申请数据块时失败，函数结束返回\n\n");
@@ -694,7 +700,7 @@ long init_create_hashmap(struct file_directory *file)
 
 	// 写入磁盘
 	write_data_block(blk, (struct data_block *)file_directory);
-	free(hashmap);
+	free(hash_map);
 }
 
 void init_file_dir(struct file_directory *file_dir, char *m, char *n, int flag)
@@ -719,6 +725,7 @@ void init_file_dir(struct file_directory *file_dir, char *m, char *n, int flag)
 		// 该文件为目录
 		file_dir->mode = S_IFDIR | 0766;
 		long hashMapBlock = -1;
+		create_hashmap(file_dir);
 	}
 	file_dir->uid = getuid();
 }
