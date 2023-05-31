@@ -34,7 +34,6 @@ struct file_directory
     int mode;         //
     size_t fsize;     // 文件大小（file size）
     long nStartBlock; // 目录开始块位置（where the first block is on disk）
-    long nMapBlock;   // 目录位图块位置（where the first block is on disk）
     int flag;         // indicate type of file. 0:for unused; 1:for file; 2:for directory
 };
 
@@ -48,10 +47,11 @@ struct data_block
 
 struct hash_map
 {
-    char fname[MAX_FILENAME + 1]; // 文件名 (plus space for null)
+    char path[30]; // 文件名 (plus space for null)
     long hashcode;
-    long nStartBlock; // 目录开始块位置（where the first block is on disk）
-    int flag;         // indicate type of file. 0:for unused; 1:for file; 2:for directory
+    long nStartBlock; // 该文件所在开始块位置（where the first block is on disk）
+    struct file_directory *file_dir;
+    int flag; // indicate type of file. 0:for unused; 1:for file; 2:for directory
 };
 
 // 加载镜像目录

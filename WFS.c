@@ -15,6 +15,7 @@
 #include <malloc.h>
 
 #include "WFS.h"
+#include "hash.c"
 
 #define RED "\033[1;31m"
 
@@ -33,19 +34,6 @@ void read_cpy_file_dir(struct file_directory *a, struct file_directory *b)
 	a->fsize = b->fsize;
 	a->nStartBlock = b->nStartBlock;
 	a->flag = b->flag;
-}
-
-long str_to_hash(char *str)
-{
-	int i = 1;
-	long ret = 0;
-	while (*str != '\0')
-	{
-		ret += *str * i;
-		i++;
-		str++;
-	}
-	return ret;
 }
 
 // 根据文件的块号，从磁盘（5M大文件）中读取数据
@@ -581,6 +569,17 @@ int get_fd_to_attr(const char *path, struct file_directory *attr)
 		printf("get_fd_to_attr：这是一个根目录，直接构造file_directory并返回0，函数结束返回\n\n");
 		return 0;
 	}
+
+	long blk;
+	struct file_directory *hash_file_dir;
+	printf("path:%s \n", tmp_path);
+	if (find_hash(tmp_path, &blk, hash_file_dir) == 1)
+	{
+		attr = hash_file_dir;
+		printf("从hashmap获取到file_dir \n");
+		return 0;
+	}
+
 	// 检查完字符串既不为空也不为根目录,则要处理一下路径，而路径分为2种（我们只做2级文件系统）
 	// 一种是文件直接放在根目录下，则路径形为：/a.txt，另一种是在一个目录之下，则路径形为:/hehe/a.txt
 	// 我们路径处理的目标是让tmp_path记录diskimg下的目录名（如果path含目录的话），m记录文件名，n记录后缀名
@@ -679,30 +678,6 @@ int get_fd_to_attr(const char *path, struct file_directory *attr)
 	return -1;
 }
 
-// 初始化创建目录hashmap
-long init_create_hashmap(struct file_directory *file)
-{
-	long hashcode = str_to_hash(file_name);
-	// TODO: 完成初始化hash表
-	// 创建新块
-	long blk = -1;
-	struct data_block *data_block;
-	if (get_empty_blk(1, &blk) == -1)
-	{
-		printf(RED "错误：create_hashmap：为新建文件申请数据块时失败，函数结束返回\n\n");
-		return -errno;
-	}
-	// setting file struct
-	file->nMapBlock = blk;
-	read_cpy_data_block(blk, (struct data_block *)data_block);
-	data_block->size = 0;
-	data_block->nNextBlock = -1;
-
-	// 写入磁盘
-	write_data_block(blk, (struct data_block *)file_directory);
-	free(hash_map);
-}
-
 void init_file_dir(struct file_directory *file_dir, char *m, char *n, int flag)
 {
 	// 给新建的file_directory赋值
@@ -724,8 +699,6 @@ void init_file_dir(struct file_directory *file_dir, char *m, char *n, int flag)
 	{
 		// 该文件为目录
 		file_dir->mode = S_IFDIR | 0766;
-		long hashMapBlock = -1;
-		create_hashmap(file_dir);
 	}
 	file_dir->uid = getuid();
 }
@@ -1054,6 +1027,8 @@ static int WFS_getattr(const char *path, struct stat *stbuf, struct fuse_file_in
 		stbuf->st_mtime = attr->mtime;
 		stbuf->st_uid = attr->uid;
 		stbuf->st_size = attr->fsize;
+
+		add_hash(path, attr->nStartBlock, attr->flag, attr);
 	}
 	else if (attr->flag == 1)
 	{
@@ -1066,6 +1041,7 @@ static int WFS_getattr(const char *path, struct stat *stbuf, struct fuse_file_in
 		stbuf->st_uid = attr->uid;
 
 		// stbuf->st_nlink = 1;
+		add_hash(path, attr->nStartBlock, attr->flag, attr);
 	}
 	else
 	{
