@@ -34,6 +34,10 @@ void read_cpy_file_dir(struct file_directory *a, struct file_directory *b)
 	a->fsize = b->fsize;
 	a->nStartBlock = b->nStartBlock;
 	a->flag = b->flag;
+	a->atime = b->atime;
+	a->mtime = b->mtime;
+	a->uid = b->uid;
+	a->mode = b->mode;
 }
 
 // 根据文件的块号，从磁盘（5M大文件）中读取数据
@@ -573,9 +577,8 @@ int get_fd_to_attr(const char *path, struct file_directory *attr)
 	long blk;
 	struct file_directory *hash_file_dir;
 	printf("path:%s \n", tmp_path);
-	if (find_hash(tmp_path, &blk, hash_file_dir) == 1)
+	if (find_hash(tmp_path, &blk, attr) == 1)
 	{
-		attr = hash_file_dir;
 		printf("从hashmap获取到file_dir \n");
 		return 0;
 	}
@@ -1021,8 +1024,8 @@ static int WFS_getattr(const char *path, struct stat *stbuf, struct fuse_file_in
 	if (attr->flag == 2)
 	{
 		printf("WFS_getattr：这个file_directory是一个目录\n\n");
-		stbuf->st_mode = S_IFDIR | 0666; // 设置成目录,S_IFDIR和0666（8进制的文件权限掩码），这里进行或运算
-										 // stbuf->st_nlink = 2;//st_nlink是连到该文件的硬连接数目,即一个文件的一个或多个文件名。说白点，所谓链接无非是把文件名和计算机文件系统使用的节点号链接起来。因此我们可以用多个文件名与同一个文件进行链接，这些文件名可以在同一目录或不同目录。
+		stbuf->st_mode = S_IFDIR | attr->mode; // 设置成目录,S_IFDIR和0666（8进制的文件权限掩码），这里进行或运算
+											   // stbuf->st_nlink = 2;//st_nlink是连到该文件的硬连接数目,即一个文件的一个或多个文件名。说白点，所谓链接无非是把文件名和计算机文件系统使用的节点号链接起来。因此我们可以用多个文件名与同一个文件进行链接，这些文件名可以在同一目录或不同目录。
 		stbuf->st_atime = attr->atime;
 		stbuf->st_mtime = attr->mtime;
 		stbuf->st_uid = attr->uid;
@@ -1422,6 +1425,7 @@ static struct fuse_operations WFS_oper = {
 int main(int argc, char *argv[])
 {
 	umask(0);
+	init_hashmap();
 	return fuse_main(argc, argv, &WFS_oper, NULL);
 }
 
