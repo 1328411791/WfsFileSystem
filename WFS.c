@@ -15,6 +15,7 @@
 #include <malloc.h>
 
 #include "WFS.h"
+#include "hashmap.h"
 
 #define RED "\033[1;31m"
 #define BLACK "\033[0m"
