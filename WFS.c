@@ -17,6 +17,7 @@
 #include "WFS.h"
 #include "hashmap.h"
 #include "hash.c"
+#include "log.c"
 
 #define RED "\033[1;31m"
 #define BLACK "\033[0m"
@@ -33,6 +34,10 @@ void read_cpy_file_dir(struct file_directory *a, struct file_directory *b)
 	a->fsize = b->fsize;
 	a->nStartBlock = b->nStartBlock;
 	a->flag = b->flag;
+	a->uid = b->uid;
+	a->mode = b->mode;
+	a->atime = b->atime;
+	a->mtime = b->mtime;
 }
 
 // 根据文件的块号，从磁盘（5M大文件）中读取数据
@@ -629,17 +634,7 @@ int get_fd_to_attr(const char *path, struct file_directory *attr)
 			if (strcmp(m, tempfilename) == 0)
 			{ // found speafied file
 				// get flie config
-				attr->flag = file_dir->flag; // for file
-				strcpy(attr->fname, file_dir->fname);
-				strcpy(attr->fext, file_dir->fext);
-
-				attr->atime = file_dir->atime;
-				attr->mtime = file_dir->mtime;
-				attr->mode = file_dir->mode;
-				attr->uid = file_dir->uid;
-
-				attr->fsize = file_dir->fsize;
-				attr->nStartBlock = file_dir->nStartBlock;
+				read_cpy_file_dir(attr, file_dir);
 				free(data_blk);
 				return (0);
 			}
