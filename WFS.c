@@ -19,9 +19,6 @@
 #include "hash.c"
 #include "log.c"
 
-#define RED "\033[1;31m"
-#define BLACK "\033[0m"
-
 struct hashmap *file_map;
 
 // 该函数为读取并复制file_directory结构的内容，因为文件系统所有对文件的操作都需要先从文件所在目录
@@ -416,7 +413,7 @@ int setattr(const char *path, struct file_directory *attr, int flag)
 		{
 			free(data_blk);
 			free(file_dir);
-			printf(RED "错误：create_file_dir:从目录块中读取目录信息到data_blk时出错\n");
+			Error("错误：create_file_dir:从目录块中读取目录信息到data_blk时出错\n");
 			return -ENOENT;
 		}
 	}
@@ -582,7 +579,6 @@ int get_fd_to_attr(const char *path, struct file_directory *attr)
 	if (file != NULL)
 	{
 		read_cpy_file_dir(attr, file->file_dir);
-		hashmap_scan(file_map, index_iter, NULL);
 		Log("path:%s 从map中获得地址\n", file->path);
 		return 0;
 	}
@@ -649,7 +645,6 @@ int get_fd_to_attr(const char *path, struct file_directory *attr)
 			{ // found speafied file
 				// 设置hash索引
 				hashmap_set(file_map, set_add_index(path, file_dir));
-				hashmap_scan(file_map, index_iter, NULL);
 				read_cpy_file_dir(attr, file_dir);
 				free(data_blk);
 				return (0);
@@ -666,7 +661,7 @@ int get_fd_to_attr(const char *path, struct file_directory *attr)
 		{
 			free(data_blk);
 			free(file_dir);
-			printf(RED "错误：create_file_dir:从目录块中读取目录信息到data_blk时出错\n");
+			Error("错误：create_file_dir:从目录块中读取目录信息到data_blk时出错\n");
 			return -1;
 		}
 	}
@@ -721,7 +716,7 @@ int enlarge_blk(long par_dir_blk, struct file_directory *file_dir,
 	}
 	else
 	{
-		printf(RED "没有分配空闲块");
+		Error("没有分配空闲块");
 		return -ENOENT;
 	}
 
@@ -830,7 +825,7 @@ int create_file_dir(const char *path, int flag)
 		{
 			free(data_blk);
 			free(file_dir);
-			printf(RED "错误：create_file_dir:从目录块中读取目录信息到data_blk时出错\n");
+			Error("错误：create_file_dir:从目录块中读取目录信息到data_blk时出错\n");
 			return -ENOENT;
 		}
 	}
@@ -851,7 +846,7 @@ int create_file_dir(const char *path, int flag)
 			if (res = enlarge_blk(par_dir_blk, &file_dir, data_blk, n, m, flag))
 			{
 				free(data_blk);
-				printf(RED "创建错误");
+				Error("创建错误");
 				return res;
 			}
 			free(n);
@@ -1135,7 +1130,7 @@ static int WFS_read(const char *path, char *buf, size_t size, off_t offset, stru
 			offset -= MAX_DATA_IN_BLOCK;
 			if (read_cpy_data_block(data_blk->nNextBlock, data_blk) == -1)
 			{
-				printf(RED "块读取错误\n");
+				Error("块读取错误\n");
 				return -errno;
 			}
 		}
@@ -1164,7 +1159,7 @@ static int WFS_read(const char *path, char *buf, size_t size, off_t offset, stru
 			offset = 0;
 			if (read_cpy_data_block(data_blk->nNextBlock, data_blk) == -1)
 			{
-				printf(RED "块读取错误\n");
+				Error("块读取错误\n");
 				return -errno;
 			}
 		}
@@ -1217,7 +1212,7 @@ static int WFS_write(const char *path, const char *buf, size_t size, off_t offse
 			p_offset -= MAX_DATA_IN_BLOCK;
 			if (read_cpy_data_block(data_blk->nNextBlock, data_blk) == -1)
 			{
-				printf(RED "块读取错误\n");
+				Error("块读取错误\n");
 				return -errno;
 			}
 		}
@@ -1266,7 +1261,7 @@ static int WFS_write(const char *path, const char *buf, size_t size, off_t offse
 			}
 			else
 			{
-				printf(RED "没有分配空闲块");
+				Error("没有分配空闲块");
 				return -ENOENT;
 			}
 			free(tmp);
@@ -1323,7 +1318,7 @@ static int WFS_access(const char *path, int flag)
 	}
 	if (attr->flag == 1)
 	{
-		printf(RED "该路径不是目录\n" BLACK);
+		Error("错误：该路径不是目录\n");
 		free(attr);
 		return -ENOTDIR;
 	}
@@ -1398,7 +1393,7 @@ static int WFS_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_
 		{
 			free(data_blk);
 			free(file_dir);
-			printf(RED "错误：create_file_dir:从目录块中读取目录信息到data_blk时出错\n");
+			Error("错误：create_file_dir:从目录块中读取目录信息到data_blk时出错\n");
 			return -ENOENT;
 		}
 	}
