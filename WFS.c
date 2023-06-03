@@ -1279,6 +1279,9 @@ static int WFS_write(const char *path, const char *buf, size_t size, off_t offse
 	if (setattr(path, attr, 1) == -1)
 		size = -errno;
 
+	// 更新索引参数
+	hashmap_delete(file_map, set_find_index(path));
+
 	printf("WFS_write：文件写入成功，函数结束返回\n");
 	free(attr);
 	free(data_blk); // free(next_blk);
