@@ -44,7 +44,6 @@ struct data_block
 struct file_index
 {
     char path[50];
-    long nStartBlock;
     struct file_directory *file_dir;
 };
 

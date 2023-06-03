@@ -18,11 +18,10 @@ void _Log(char *format, char *FILE, int LINE, ...)
     va_list args;
     va_start(args, LINE);
     printf(GREEN);
-
     // 输出位于代码的行数
     printf("%s:%d: ", FILE, LINE);
-
     vprintf(format, args);
+    printf(BLACK);
     va_end(args);
 }
 
@@ -32,11 +31,10 @@ void _Error(char *format, char *FILE, int LINE, ...)
     va_list args;
     va_start(args, LINE);
     printf(RED);
-
     // 输出调用函数位于代码的行数
     printf("%s:%d: ", FILE, LINE);
-
     vprintf(format, args);
+    printf(BLACK);
     va_end(args);
 }
 
