@@ -16,9 +16,12 @@
 
 #include "WFS.h"
 #include "hashmap.h"
+#include "hash.c"
 
 #define RED "\033[1;31m"
 #define BLACK "\033[0m"
+
+struct hashmap *file_map;
 
 // 该函数为读取并复制file_directory结构的内容，因为文件系统所有对文件的操作都需要先从文件所在目录
 // 读取file_directory信息,然后才能找到文件在磁盘的位置，后者的数据复制给前者
@@ -1401,6 +1404,7 @@ static struct fuse_operations WFS_oper = {
 
 int main(int argc, char *argv[])
 {
+	file_map = hashmap_new(sizeof(struct file_index), 0, 0, 0, index_hash, index_compare, NULL, NULL);
 	umask(0);
 	return fuse_main(argc, argv, &WFS_oper, NULL);
 }

@@ -40,6 +40,14 @@ struct data_block
     char data[MAX_DATA_IN_BLOCK]; // And all the rest of the space in the block can be used for actual data storage.
 };
 
+// 目录文件索引
+struct file_index
+{
+    char path[50];
+    long nStartBlock;
+    struct file_directory *file_dir;
+};
+
 // 加载镜像目录
 char *disk_path = "/tmp/diskimg";
 

@@ -2,7 +2,8 @@
     "files.associations": {
         "fuse.h": "c",
         "time.h": "c",
-        "malloc.h": "c"
+        "malloc.h": "c",
+        "typeinfo": "c"
     },
     "C_Cpp.errorSquiggles": "disabled",
     "makefile.launchConfigurations": [
