@@ -679,10 +679,15 @@ int get_fd_to_attr(const char *path, struct file_directory *attr)
 
 void init_file_dir(struct file_directory *file_dir, char *m, char *n, int flag)
 {
+
 	// 给新建的file_directory赋值
 	strcpy(file_dir->fname, m);
 	if (flag == 1 && *n != '\0')
 		strcpy(file_dir->fext, n);
+	else
+	{
+		strcpy(file_dir->fext, "\0");
+	}
 	file_dir->fsize = 0;
 	file_dir->flag = flag;
 
