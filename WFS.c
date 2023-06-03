@@ -17,6 +17,7 @@
 #include "WFS.h"
 
 #define RED "\033[1;31m"
+#define BLACK "\033[0m"
 
 // 该函数为读取并复制file_directory结构的内容，因为文件系统所有对文件的操作都需要先从文件所在目录
 // 读取file_directory信息,然后才能找到文件在磁盘的位置，后者的数据复制给前者
@@ -1295,7 +1296,7 @@ static int WFS_access(const char *path, int flag)
 	}
 	if (attr->flag == 1)
 	{
-		printf(RED "该路径不是目录\n");
+		printf(RED "该路径不是目录\n" BLACK);
 		free(attr);
 		return -ENOTDIR;
 	}
