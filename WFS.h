@@ -43,8 +43,8 @@ struct data_block
 // 目录文件索引
 struct file_index
 {
-    char path[50];
-    struct file_directory *file_dir;
+    char path[50];                   // 文件目录
+    struct file_directory *file_dir; // 文件信息
 };
 
 // 加载镜像目录
