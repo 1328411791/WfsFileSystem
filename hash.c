@@ -8,7 +8,7 @@ int index_compare(const void *a, const void *b, void *udata)
 bool index_iter(const void *item, void *udata)
 {
     const struct file_index *index = item;
-    prile_dir address=%lx)\n", index->path, (longntf("%s (fi)index->file_dir);
+    printf("%s (file_dir address=%lx)\n", index->path, index->file_dir);
     return true;
 }
 
